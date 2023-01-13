@@ -7,7 +7,6 @@
 import pandas as pd
 import math
 import ship
-pd.set_option("display.precision", 3)
 import A_C
 
 ST = [0, 0.5, 1, 1.5, 2, 3, 4, 5, 6, 7, 
@@ -21,18 +20,73 @@ Simpson = [0.5, 2.0, 1.0, 2.0, 1.5,
            4.0, 2.0, 4.0, 2.0, 4.0,
            1.5, 2.0, 1.0, 2.0, 0.5
           ]
+
+def ship_new_particular(nama_excel):
+    data = ship.particular(nama_excel)[0]['Value']
+    a = 3.28 #meter to feet#
+    b = 1.68 #knot to ft/sec#c
+    c = 0.06852 #newton/m to lb/ft
+    d = 2.20462 #kg to lb
+    e = 1/40
+    Loa = data[1]*a*e #ft
+    Lwl = data[2]*a*e #ft
+    Vs = data[0]*((Lwl/data[2])**0.5)*b #ft/sec
+    Lpp = data[3]*a*e #ft
+    B = data[4]*a*e #ft
+    H = data[5]*a*e #ft
+    T = data[6]*a*e #ft
+    Cb = data[7]
+    Lcb = data[8]*a*e #ft
+    Lcg = data[9]*a*e #ft
+    WSA = data[10]*(a**2)*(e**2) #ft^^2
+    Disp = data[11]*d*1000*(e**3) #lb
+    ###midship from AP###
+    x = Lpp/2
+    ###distance between station###
+    y = Lpp/20
+    return (Vs, Loa, Lwl, Lpp,
+            B, H, T, Cb, Lcb,
+            Lcg, WSA, Disp, x, y
+           )
+
+class coef:
+    def g():
+        return 32.2
+    def phi():
+        return 3.14
+    def rho():
+        return 1.9384
+
+class conversion:
+    def meter_to_feet(value):
+        #convert meter to feet
+        feet = value*3.28
+        return feet
+    def knot_to_feetsec(value):
+        #convert knot to ft/sec
+        feetsec = value*1.68
+        return feetsec
+    def m2_to_ft2(value):
+        #convert m**2 to ft**2
+        ft2 = value*10.76
+        return ft2
+    def Nm_to_lbft(value):
+        #convert Newton/meter to lb/ft
+        lbft = value*0.0685218
+        return lbft
+    def kg_to_lb(value):
+        #convert kg to lb
+        lb = value*2.204622476
+        return lb
+
 def wave_data(wave_height, wave_period):
     #wave_data(lng, lat, time, coordinate, data_set_gelombang)
-    g = 32.2
-    rho = 3.14
-    a = 3.28
-    wave_amplitude = (wave_height*a/2)
-    wave_length = g*(wave_period**2)/(2*rho)
-    wave_velocity = math.sqrt(g*wave_length/(2*rho))
+    wave_amplitude = conversion.meter_to_feet(wave_height)/2
+    wave_length = coef.g()*(wave_period**2)/(2*coef.phi())
+    wave_velocity = math.sqrt(coef.g()*wave_length/(2*coef.phi()))
     return wave_amplitude, wave_length, wave_velocity
 
 def breadthperstation(data):
-    a = 3.28 #meter to feet#
     #make a new list
     list1 = []
     list2 = [] 
@@ -40,7 +94,7 @@ def breadthperstation(data):
     for item in data:
         x = (item/40)
         list1.append(x)
-        y = x*a
+        y = conversion.meter_to_feet(x)
         list2.append(y)
         z = y*2
         list3.append(z)
@@ -52,18 +106,15 @@ def breadthperstation(data):
     return df
 
 def CSA(data):
-    a = 3.28 ###meter to feet###
-    b = 1.9384 ###lb-sec^^2/ft^^4(rho)###
-    g = 32.2 
     list1 = []
     list2 = []
     list3 = []
     for item in data:
         x = (item/(40**2))
         list1.append(x)
-        y = x*(a**2)
+        y = conversion.m2_to_ft2(x)
         list2.append(y)
-        z= y*b*g
+        z= y*coef.rho()*coef.g()
         list3.append(z)
     dic = {'Station':ST, 'Area (m2)':data, 
            'scale /40': list1, 'Area (ft2)': list2, 
@@ -104,15 +155,9 @@ def Arm_from_LCB(data):
     return lst1
         
 def az_ayy(nama_excel):
-    ###rho fresh water at 59F###
-    rho = 1.9384 #lb-sec2/ft4
-    phi = 3.14 
-    ###input excel###
     xls = pd.ExcelFile(nama_excel)
-    ###parsing sheet in excel###
     df2 = pd.read_excel(xls, 'Sheet2',usecols=[1,2])
-    ###call ship particular###
-    data = ship.new_particular(nama_excel)
+    data = ship_new_particular(nama_excel)
     ###Call table for breadth per station###
     bps = breadthperstation(df2['Half Breadth (m)']) #bisa diganti#
     ###Call table for CSA###
@@ -121,7 +166,7 @@ def az_ayy(nama_excel):
     col2 = bps['B (ft)']
     col3 = [data[6] for item in range(len(col1))]
     col4 = csa['Area (ft2)']
-    col5 =  Arm_from_LCB(data)
+    col5 = Arm_from_LCB(data)
     col6 = [col2[0]*((-0.446)**2)/(2*32.2) for item in range(len(col1))]
     col7 = [x/y for x,y in zip(col2, col3)] #Bn/Tn
     col8 = [x*y for x,y in zip(col2, col3)] #Bn*Tn
@@ -129,7 +174,7 @@ def az_ayy(nama_excel):
     col9[-1] = 0
     col10 = [A_C.findC(x,y,z) for x,y,z in zip(col9, col6, col7)]
     col11 = [x**2 for x in col2] #Beta-nkuadrat
-    col12 = [rho*phi*x/8 for x in col11] #phi*rho*beta-n/8
+    col12 = [coef.rho()*coef.phi()*x/8 for x in col11] #coef.phi()*rho*beta-n/8
     col13 = [x*y for x,y in zip(col10, col12)] #an
     simpson = Simpson 
     col15 = [x*y for x,y in zip(col13, simpson)] #product1
@@ -155,13 +200,11 @@ def az_ayy(nama_excel):
     return df
 
 def cC(nama_excel):
-    b = 1.9384 ###lb-sec^^2/ft^^4(rho)###
-    g = 32.2 
     simpson = Simpson
     data1 = az_ayy(nama_excel)
     col1 = ST
     col2 = data1['Bn']
-    col3 = [x*b*g for x in col2]
+    col3 = [x*coef.rho()*coef.g() for x in col2]
     col5 = [x*y for x,y in zip(col3, simpson)] #product1
     col6 = data1['ξ^2']
     col7 = [x*y for x,y in zip(col3, col6)]
@@ -178,10 +221,8 @@ def cC(nama_excel):
     df = pd.DataFrame(dic)
     return df
 
-def bB(nama_excel):
-    koef1 = 1.9384 ###lb-sec^^2/ft^^4(rho)###
-    koef2 = 32.2 
-    nanti_ganti = -0.446
+def bB(nama_excel, vs, heading_angle):
+    freq_encounter = frequency_encounter(nama_excel, vs, heading_angle)
     xls = pd.ExcelFile(nama_excel)
     ###parsing sheet in excel###
     df2 = pd.read_excel(xls, 'Sheet2',usecols=[1,2])
@@ -192,7 +233,7 @@ def bB(nama_excel):
     col4 = data1['βn']
     col5 = [A_C.findA(x,y,z) for x,y,z in zip(col4, col2, col3)]
     col6 = [x**2 for x in col5] #apmlitudekuadrat
-    col7 = [koef1*(koef2**2)*x/(nanti_ganti**3) for x in col6] #C
+    col7 = [coef.rho()*(coef.g()**2)*x/(freq_encounter**3) for x in col6] #C
     simpson = Simpson
     col9 = [x*y for x,y in zip(col7, simpson)] #product1
     col13 = [x*y*z for x,y,z in zip(col7, data1['ξ^2'], simpson)] #product2
@@ -208,9 +249,9 @@ def bB(nama_excel):
     df = pd.DataFrame(dic)
     return df
 
-def dehDEH(nama_excel):
+def dehDEH(nama_excel, vs, heading_angle):
     data1 = az_ayy(nama_excel)
-    data2 = bB(nama_excel)
+    data2 = bB(nama_excel, vs, heading_angle)
     data3 = cC(nama_excel)
     simpson = Simpson
     col1 = ST
@@ -234,14 +275,12 @@ def dehDEH(nama_excel):
     return df
 
 def m_Lyy(nama_excel):
-    koef1 = 1.9384 ###lb-sec^^2/ft^^4(rho)###
-    koef2 = 32.2
     xls = pd.ExcelFile(nama_excel)
     ###parsing sheet in excel###
-    df2 = pd.read_excel(xls, 'Sheet2',usecols=[1,2,3])
+    df2 = pd.read_excel(xls, 'Sheet2',usecols=[1,2])
     col1 = ST
     col2 = CSA(df2['Luas CSA'])['b (lb/ft)'] #weightperfoot
-    col3 = [ x/koef2 for x in col2] #mn
+    col3 = [x/coef.g() for x in col2] #mn
     simpson = Simpson
     col5 = [x*y for x,y in zip(col3,simpson)] #product1
     col6 = az_ayy(nama_excel)['ξ^2']
@@ -301,32 +340,33 @@ def new_l(data):
     new_list = insert_value(new_list_l)
     return new_list_l
 
-
-def F_M(nama_excel, wave_height, wave_period, vs):
-    phi = 3.14
+def F_M(nama_excel, wave_height, wave_period, heading_angle, vs):
     xls = pd.ExcelFile(nama_excel)
-    wave_amplitude = wave_data(wave_height, wave_period)[0] ##harus diubah
-    frequency_encounter = -0.446 ###harus diubah
+    data = ship_new_particular(nama_excel)
+    loa = data[1]
+    wave_amplitude = wave_data(wave_height, wave_period)[0]
+    ship_particular = ship.particular(nama_excel)[0]['Value']
+    lwl_model = data[2]
+    lwl_real = ship_particular[2]
+    service_speed = speed_model(vs, lwl_model, lwl_real)
+    freq_encounter = frequency_encounter(nama_excel, vs, heading_angle)
     ###parsing sheet in excel###
     table_az_ayy = az_ayy(nama_excel)
-    table_bB = bB(nama_excel)
+    table_bB = bB(nama_excel, vs, heading_angle)
     table_cC = cC(nama_excel)
-    df1 = pd.read_excel(xls, 'Sheet1',usecols=[0,1])
-    df2 = pd.read_excel(xls, 'Sheet2',usecols=[1,2,3])
     Sn = table_az_ayy['Sn']
     Bn = table_az_ayy['Bn']
-    loa = ship.new_particular(nama_excel)[1]
     col2 = table_az_ayy['ξ']
-    col3 = [2*phi*x/loa for x in col2]
+    col3 = [2*coef.phi()*x/loa for x in col2]
     col4 = [math.sin(x) for x in col3]
     col5 = [math.cos(x) for x in col3]
     col6 = [x/y for x,y in zip(Sn, Bn)]
-    col7 = [2*x*phi/loa for x in col6]
+    col7 = [2*x*coef.phi()/loa for x in col6]
     col8 = [math.exp(-1*x) for x in col7]
     col9 = table_cC['Cn']
     col10 = [x*wave_amplitude for x in col9]
     col11 = table_az_ayy['an']
-    col12 = [x*((-1*wave_amplitude)*(frequency_encounter**2)) for x in col11]
+    col12 = [x*((-1*wave_amplitude)*(freq_encounter**2)) for x in col11]
     col13 = [x + y for x,y in zip(col10,col12)]
     sub_data1 = add0start(col11)
     sub_data2 = add0end(col11)
@@ -337,8 +377,8 @@ def F_M(nama_excel, wave_height, wave_period, vs):
     cal_l = [(((a-b)/(c-d))+((b-e)/(d-f))) for a,b,c,d,e,f in
             zip(sub_data2,sub_data5,sub_data4,sub_data6,sub_data1,sub_data3)]
     col14 = new_l(cal_l)
-    col15 = [vs*wave_amplitude*frequency_encounter*x for x in col14]
-    col16 = [x*wave_amplitude*frequency_encounter for x in table_bB['C']]
+    col15 = [vs*wave_amplitude*freq_encounter*x for x in col14]
+    col16 = [x*wave_amplitude*freq_encounter for x in table_bB['C']]
     col17 = [x-y for x,y in zip(col16,col15)]
     col18 = [x*y for x,y in zip(col13,col4)]
     col19 = [x*y for x,y in zip(col17,col5)]
@@ -364,22 +404,39 @@ def F_M(nama_excel, wave_height, wave_period, vs):
     df = pd.DataFrame(dic)
     return df
 
+def wave_frequency(loa):
+    wave_freq = math.sqrt(2 * coef.phi() * coef.g() / loa)
+    return wave_freq
+
+def speed_model(speed_real, lwl_model, lwl_real):
+    vs = conversion.knot_to_feetsec(speed_real * math.sqrt(lwl_model / lwl_real))
+    return vs
+
+def frequency_encounter(nama_excel, vs, heading_angle):
+    data1 = ship_new_particular(nama_excel)
+    loa_model = data1[1]
+    lwl_model = data1[2]
+    lwl_real = ship.particular(nama_excel)[0]['Value'][2]
+    service_speed = speed_model(vs, lwl_model, lwl_real)
+    freq_encounter = wave_frequency(loa_model) - (
+            ((wave_frequency(loa_model) ** 2) * service_speed / coef.g()) * math.cos(math.radians(heading_angle)))
+    return freq_encounter
+
 def Calculation(nama_excel, wave_height, wave_period, heading_angle, vs):
-    g = 32.2
-    phi = 3.14
-    rho = 1.9384
-    data1 = ship.new_particular(nama_excel)
+    data1 = ship_new_particular(nama_excel)
     data2 = az_ayy(nama_excel)
-    data3 = bB(nama_excel)
+    data3 = bB(nama_excel, vs, heading_angle)
     data4 = cC(nama_excel)
     data5 = m_Lyy(nama_excel)
-    data6 = F_M(nama_excel, wave_height, wave_period, vs)
+    data6 = F_M(nama_excel, wave_height, wave_period, heading_angle, vs)
     loa = data1[1]
     beam = data1[4]
     wave_length = wave_data(wave_height, wave_period)[1]
-    wave_frequency = math.sqrt(2*phi*g/loa)
-    service_speed = vs
-    frequency_encounter = wave_frequency - (((wave_frequency**2)*service_speed/g)*math.cos(math.radians(heading_angle)))
+    ship_particular = ship.particular(nama_excel)[0]['Value']
+    lwl_model = data1[2]
+    lwl_real = ship_particular[2]
+    service_speed = speed_model(vs, lwl_model, lwl_real)
+    freq_encounter = frequency_encounter(nama_excel, vs, heading_angle)
     S = data1[13]
     ###added mass###
     az = S*data2['Product1'].sum()/3 #for heaving
@@ -404,20 +461,20 @@ def Calculation(nama_excel, wave_height, wave_period, heading_angle, vs):
     F1 = S*data6['Product1'].sum()/3 #exciting force 1
     F2 = S*data6['Product2'].sum()/3 #exciting force 2
     F0 = math.sqrt(F1**2 + F2**2) #amplitude of exciting foce
-    σ = 180 + math.atan(F2/F1)*180/3.14
+    σ = 180 + math.atan(F2/F1)*180/coef.phi()
     M1 = S*data6['Product3'].sum()/3 #exciting moment 1
     M2 = S*data6['Product4'].sum()/3 #exciting moment 2
     M0 = math.sqrt(M1**2 + M2**2) #amplitude of exciting moment
-    τ =  math.atan(M2/M1)*180/3.14
+    τ =  math.atan(M2/M1)*180/coef.phi()
     
-    PR = (c - ((az+m)*(frequency_encounter**2)))
-    Pi = b*frequency_encounter
-    SR = (C - ((Iyy+ayy)*(frequency_encounter**2)))
-    Si = B*frequency_encounter
-    QR = d*frequency_encounter**2 + h
-    Qi = e*frequency_encounter
-    RR = D*frequency_encounter**2 + H
-    Ri = E*frequency_encounter
+    PR = (c - ((az+m)*(freq_encounter**2)))
+    Pi = b*freq_encounter
+    SR = (C - ((Iyy+ayy)*(freq_encounter**2)))
+    Si = B*freq_encounter
+    QR = d*freq_encounter**2 + h
+    Qi = e*freq_encounter
+    RR = D*freq_encounter**2 + H
+    Ri = E*freq_encounter
     PSR = PR*SR - Pi*Si
     PSi = PR*Si + Pi*SR
     QRR = QR*RR - Qi*Ri
@@ -457,29 +514,29 @@ def Calculation(nama_excel, wave_height, wave_period, heading_angle, vs):
     zR = FSminMQmultiplePSminQFR/PSQRPaddmultiplemin
     zi = FSminMQmultiplePSminQFi/PSQRPaddmultiplemin
     za = math.sqrt(zR**2 + zi**2)
-    δz = math.atan(zi/zR)*180/3.14
+    δz = math.atan(zi/zR)*180/coef.phi()
     θR = MPminFRmultiplePSminQRR/PSQRPaddmultiplemin
     θi = MPminFRmultiplePSminQRi/PSQRPaddmultiplemin
     θ = math.sqrt(θR**2 + θi**2)
-    δθ = math.atan(θi/θR)*180/3.14
+    δθ = math.atan(θi/θR)*180/coef.phi()
     
     bndc0 = data1[13]*data3['Product1'].sum()/3
-    B33 = (1/(frequency_encounter*data1[11]))*(math.sqrt(g/loa))*bndc0
+    B33 = (1/(freq_encounter*data1[11]))*(math.sqrt(coef.g()/loa))*bndc0
     bndc1 = data1[13]*data3['Product3'].sum()/3
-    B35B53 = (1/(frequency_encounter*data1[11]))*(math.sqrt(g/loa))*bndc1
+    B35B53 = (1/(freq_encounter*data1[11]))*(math.sqrt(coef.g()/loa))*bndc1
     bndc2 = data1[13]*data3['Product2'].sum()/3
-    B55 = (1/(frequency_encounter*data1[11]))*(math.sqrt(g/loa))*bndc2
-    P1 = (frequency_encounter**3)*2*rho*data1[11]*(math.sqrt(g/loa))*B33/((rho*(g**2))*loa)
-    P2 = (frequency_encounter**3)*2*rho*data1[11]*(math.sqrt(g/loa))*B35B53/((rho*(g**2))*loa)
-    P3 = (frequency_encounter**3)*2*rho*data1[11]*(math.sqrt(g/loa))*4*B55/((rho*(g**2))*loa)
+    B55 = (1/(freq_encounter*data1[11]))*(math.sqrt(coef.g()/loa))*bndc2
+    P1 = (freq_encounter**3)*2*coef.rho()*data1[11]*(math.sqrt(coef.g()/loa))*B33/((coef.rho()*(coef.g()**2))*loa)
+    P2 = (freq_encounter**3)*2*coef.rho()*data1[11]*(math.sqrt(coef.g()/loa))*B35B53/((coef.rho()*(coef.g()**2))*loa)
+    P3 = (freq_encounter**3)*2*coef.rho()*data1[11]*(math.sqrt(coef.g()/loa))*4*B55/((coef.rho()*(coef.g()**2))*loa)
     
     heaving_curve = za
     pitching_curve = θ
     cal_val0 = (loa**2)/(32*(beam**2))
     cal_val1 = P1*(za/heaving_curve)**2
-    cal_val2 = P3*(((3.14*loa/wave_length)**2)*(θ*wave_length/(2*3.14*wave_length*pitching_curve)**2))
-    cal_val3 = (2*3.14*loa/wave_length)*(wave_length*θ/(2*3.14*pitching_curve))*(za/heaving_curve)*(P2*math.cos(δz-δθ))
-    cal_val4 = rho*g*(heaving_curve**2)*((beam**2)/loa)
+    cal_val2 = P3*(((coef.phi()*loa/wave_length)**2)*(θ*wave_length/(2*coef.phi()*wave_length*pitching_curve)**2))
+    cal_val3 = (2*coef.phi()*loa/wave_length)*(wave_length*θ/(2*coef.phi()*pitching_curve))*(za/heaving_curve)*(P2*math.cos(δz-δθ))
+    cal_val4 = coef.rho()*coef.g()*(heaving_curve**2)*((beam**2)/loa)
     cal_val5 = cal_val0*(cal_val1 + cal_val2 - cal_val3)
     model_RAW = cal_val4*cal_val5
     ship_RAW = (model_RAW/0.025)/1000
