@@ -1,5 +1,5 @@
 ##read this file
-###Use this file to run the program
+###Use this file to run the program/n
 #1. import file python to run the program
 #ship, RAW, Coordinate, WaveData, Vs_decision, voyage,
 #2. state file that will be analyzed 

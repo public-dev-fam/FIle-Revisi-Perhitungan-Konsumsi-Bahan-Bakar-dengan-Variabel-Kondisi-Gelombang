@@ -73,7 +73,7 @@ def wave_list(data_coordinate_excel, ###dataframe untuk tabel
         time_list.append(sail_time(dist,
                                    speed_list[len(speed_list)-1]))
         
-        time = time + int(time_list[len(time_list)-1])
+        time = time + round(time_list[len(time_list)-1])
         
     return list_height, speed_list, time_list, list_direction, list_period
 

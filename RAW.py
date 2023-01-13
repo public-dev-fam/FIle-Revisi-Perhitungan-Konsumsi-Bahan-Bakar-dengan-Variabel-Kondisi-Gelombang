@@ -377,7 +377,7 @@ def F_M(nama_excel, wave_height, wave_period, heading_angle, vs):
     cal_l = [(((a-b)/(c-d))+((b-e)/(d-f))) for a,b,c,d,e,f in
             zip(sub_data2,sub_data5,sub_data4,sub_data6,sub_data1,sub_data3)]
     col14 = new_l(cal_l)
-    col15 = [vs*wave_amplitude*freq_encounter*x for x in col14]
+    col15 = [service_speed*wave_amplitude*freq_encounter*x for x in col14]
     col16 = [x*wave_amplitude*freq_encounter for x in table_bB['C']]
     col17 = [x-y for x,y in zip(col16,col15)]
     col18 = [x*y for x,y in zip(col13,col4)]
@@ -395,7 +395,7 @@ def F_M(nama_excel, wave_height, wave_period, heading_angle, vs):
     Product3 = [x*y for x,y in zip(col30,simpson)]
     col33 = [x*y for x,y in zip(col27,col2)]
     Product4 = [x*y for x,y in zip(col33,simpson)]
-    dic = {'No Station': ST, 
+    dic = {'No Station': ST,
            'Product1': Product1, 
            'Product2': Product2,
            'Product3': Product3,

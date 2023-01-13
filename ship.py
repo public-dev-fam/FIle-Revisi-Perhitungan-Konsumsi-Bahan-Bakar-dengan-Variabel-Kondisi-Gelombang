@@ -55,33 +55,6 @@ def particular(nama_excel):
     df1.columns = ['Value']
     return df1, df 
 
-def new_particular(nama_excel):
-    data = particular(nama_excel)[0]['Value']
-    a = 3.28 #meter to feet#
-    b = 1.68 #knot to ft/sec#c
-    c = 0.06852 #newton/m to lb/ft
-    d = 2.20462 #kg to lb 
-    e = 1/40
-    Loa = data[1]*a*e #ft
-    Lwl = data[2]*a*e #ft
-    Vs = data[0]*((Lwl/data[2])**0.5)*b #ft/sec
-    Lpp = data[3]*a*e #ft
-    B = data[4]*a*e #ft
-    H = data[5]*a*e #ft
-    T = data[6]*a*e #ft
-    Cb = data[7]   
-    Lcb = data[8]*a*e #ft
-    Lcg = data[9]*a*e #ft
-    WSA = data[10]*(a**2)*(e**2) #ft^^2
-    Disp = data[11]*d*1000*(e**3) #lb
-    ###midship from AP###
-    x = Lpp/2
-    ###distance between station###
-    y = Lpp/20
-    return (Vs, Loa, Lwl, Lpp, 
-            B, H, T, Cb, Lcb, 
-            Lcg, WSA, Disp, x, y
-           )   
 ###function below explains the calculation to find the ship's resistance###
 def resistance_calm_water(Vs, nama_excel):
     data = particular(nama_excel)[0]['Value']
