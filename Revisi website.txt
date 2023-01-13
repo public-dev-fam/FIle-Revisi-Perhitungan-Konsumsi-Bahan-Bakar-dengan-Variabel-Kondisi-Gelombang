@@ -1,0 +1,11 @@
+#ada tambahan menu baru 
+ --> ditambahkan menu baru di file python "pengambilan data gelombang.ipynb"
+ --> di file python "untitled.ipynb", ditambahkan menu baru "cara menampilkan total FOC"
+
+#di file python "untitled.ipynb", ada beberapa perhitungan yang baru di tambahkan
+   --> di "voyage.calculation" ditambahkan R TOTAL
+
+
+#di file "voyage.py", ada beberapa perhitungan/codingan yang diubah
+
+#di file "RAW.py", ada coding yg dirubah juga
