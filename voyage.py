@@ -129,10 +129,6 @@ def Calculate(data_kapal, jalur_pelayaran, data_set_gelombang, start_time):
     sfoc = data2[14]
     initial_speed = data2[9]
     Lpp = data2[5]
-    new_route['Initial speed (knot)'] = new_route.apply(lambda row :
-        initial_speed, axis=1)
-    new_route['time 0 (hour)'] = new_route.apply(lambda row:
-        sail_time(row['Distance (nm)'], row['Initial speed (knot)']), axis=1)
     data_gelombang = wave_list(data_coordinate_excel = jalur_pelayaran,
                                data_set_gelombang = data_set_gelombang,
                                data_kapal = data_kapal,
@@ -144,25 +140,25 @@ def Calculate(data_kapal, jalur_pelayaran, data_set_gelombang, start_time):
         Geodesic.WGS84.Inverse(row['Lat1'], row['Lng1'], row['Lat2'], row['Lng2'])['azi1'], axis=1)
     new_route['heading angle'] = new_route.apply(lambda row:
         (row['wave direction'] - row['ship angle']), axis=1)
-    new_route['speed 1 (knot)'] = new_route.apply(lambda row:
+    new_route['speed (knot)'] = new_route.apply(lambda row:
         real_speed(row['wave height (m)'], initial_speed, Lpp), axis=1)
-    new_route['time 1 (hour)'] = new_route.apply(lambda row:
-        sail_time(row['Distance (nm)'], row['speed 1 (knot)']), axis=1)
+    new_route['time (hour)'] = new_route.apply(lambda row:
+        sail_time(row['Distance (nm)'], row['speed (knot)']), axis=1)
     new_route['R Calm Water (kN)'] = new_route.apply(lambda row:
-        ship.resistance_calm_water(row['speed 1 (knot)'], data_kapal), axis=1)
+        ship.resistance_calm_water(row['speed (knot)'], data_kapal), axis=1)
     new_route['R Added Wave (kN)'] = new_route.apply(lambda row:
         RAW.Calculation(data_kapal, row['wave height (m)'], row['wave period'],
-                       row['heading angle'], row['speed 1 (knot)'] ), axis=1)
+                       row['heading angle'], row['speed (knot)'] ), axis=1)
     new_route['R Total (kN)'] = new_route.apply(lambda row:
         (row['R Calm Water (kN)'] + row['R Added Wave (kN)']), axis=1)    
     new_route['Power (kwh)'] = new_route.apply(lambda row:
-        ship.power(row['speed 1 (knot)'], row['R Calm Water (kN)'], row['R Added Wave (kN)'],
+        ship.power(row['speed (knot)'], row['R Calm Water (kN)'], row['R Added Wave (kN)'],
                        data_kapal), axis=1)
     new_route['foc (ton)'] = new_route.apply(lambda row:
-        foc(row['time 1 (hour)'], row['Power (kwh)'], sfoc), axis=1)
+        foc(row['time (hour)'], row['Power (kwh)'], sfoc), axis=1)
     return new_route
 
-def Perbandingan(jalur_pelayaran, data_kapal):
+def foc_in_calm_water(jalur_pelayaran, data_kapal):
     data1 = Coordinate.distance_route(jalur_pelayaran)
     sfoc = ship.particular(data_kapal)[1]['Value'][14]
     new_route = data1.copy()
