@@ -57,48 +57,204 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
         temp_height = extract_wave_data[0]
         temp_wave_direction = extract_wave_data[1]
         temp_wave_period = extract_wave_data[2]
-        temp_speed = real_speed(list_wave_height[len(list_wave_height)-1],
-                                        initial_speed, Lpp
-        temp_time =
-        list_wave_height.append(extract_wave_data[0])
-        list_wave_direction.append(extract_wave_data[1])
-        list_wave_period.append(extract_wave_data[2])
-        list_speed.append(real_speed(list_wave_height[len(list_wave_height)-1],
-                                        initial_speed, 
-                                        Lpp
-                                       )
-                         )
-        list_time.append(sail_time(
-            dist,list_speed[len(list_speed)-1]
-                                   ))
-        time = time + round(list_time[len(list_time)-1])
-        list_ship_angle.append(Geodesic.WGS84.Inverse(
-            lat1, lng1, lat2, lng2)['azi1'])
-        list_heading_angle.append((list_wave_direction[len(list_wave_direction)-1]) - (
-            list_ship_angle[len(list_ship_angle)-1]))
-        list_resistance_calm_water.append(ship.resistance_calm_water(
-            list_speed[len(list_speed)-1], data_kapal
-        ))
-        list_resistance_added_wave.append(RAW.Calculation(
-            data_kapal, list_wave_height[len(list_wave_height)-1],
-            list_wave_period[len(list_wave_period)-1],
-            list_heading_angle[len(list_heading_angle)-1],
-            list_speed[len(list_speed)-1]
-        ))
-        list_resistance_total.append(
-            list_resistance_calm_water[len(list_resistance_calm_water)-1] + list_resistance_added_wave[
-                len(list_resistance_added_wave)-1]
-        )
-        list_power.append(ship.power(
-            list_speed[len(list_speed)-1],
-            list_resistance_total[len(list_resistance_total)-1],
-            data_kapal
-        ))
-        list_foc.append(foc(
-            list_time[len(list_time)-1],
-            list_power[len(list_power)-1],
-            sfoc
-        ))
+        temp_speed = real_speed(temp_height, initial_speed, Lpp)
+        temp_time = sail_time(dist,temp_speed)
+        temp_ship_angle = Geodesic.WGS84.Inverse(lat1, lng1, lat2, lng2)['azi1']
+        temp_heading_angle = temp_wave_direction - temp_ship_angle
+        temp_resistance_calm_water = ship.resistance_calm_water(temp_speed, data_kapal)
+        temp_resistance_added_wave = RAW.Calculation(
+            data_kapal, temp_height,
+            temp_wave_period, temp_heading_angle,
+            temp_speed)
+        temp_resistance_total = temp_resistance_calm_water + temp_resistance_added_wave
+        temp_power = ship.power(
+            temp_speed,
+            temp_resistance_total,
+            data_kapal)
+        temp_foc = foc(temp_time,
+                       temp_power,
+                       sfoc)
+        if temp_power <= BHP:
+            list_wave_height.append(temp_height)
+            list_wave_direction.append(temp_wave_direction)
+            list_wave_period.append(extract_wave_data[2])
+            list_speed.append(temp_speed)
+            list_time.append(temp_time)
+            list_ship_angle.append(temp_ship_angle)
+            list_heading_angle.append(temp_heading_angle)
+            list_resistance_calm_water.append(temp_resistance_calm_water)
+            list_resistance_added_wave.append(temp_resistance_added_wave)
+            list_resistance_total.append(temp_resistance_total)
+            list_power.append(temp_power)
+            list_foc.append(temp_foc)
+            time = time + round(list_time[len(list_time) - 1])
+        elif temp_power >= BHP:
+            temp_speed = temp_speed - 1
+            temp_time = sail_time(dist, temp_speed)
+            temp_ship_angle = Geodesic.WGS84.Inverse(lat1, lng1, lat2, lng2)['azi1']
+            temp_heading_angle = temp_wave_direction - temp_ship_angle
+            temp_resistance_calm_water = ship.resistance_calm_water(temp_speed, data_kapal)
+            temp_resistance_added_wave = RAW.Calculation(
+                data_kapal, temp_height,
+                temp_wave_period, temp_heading_angle,
+                temp_speed)
+            temp_resistance_total = temp_resistance_calm_water + temp_resistance_added_wave
+            temp_power = ship.power(
+                temp_speed,
+                temp_resistance_total,
+                data_kapal)
+            temp_foc = foc(temp_time,
+                           temp_power,
+                           sfoc)
+            if temp_power <= BHP:
+                list_wave_height.append(temp_height)
+                list_wave_direction.append(temp_wave_direction)
+                list_wave_period.append(extract_wave_data[2])
+                list_speed.append(temp_speed)
+                list_time.append(temp_time)
+                list_ship_angle.append(temp_ship_angle)
+                list_heading_angle.append(temp_heading_angle)
+                list_resistance_calm_water.append(temp_resistance_calm_water)
+                list_resistance_added_wave.append(temp_resistance_added_wave)
+                list_resistance_total.append(temp_resistance_total)
+                list_power.append(temp_power)
+                list_foc.append(temp_foc)
+                time = time + round(list_time[len(list_time) - 1])
+            elif temp_power >= BHP:
+                temp_speed = temp_speed - 1
+                temp_time = sail_time(dist, temp_speed)
+                temp_ship_angle = Geodesic.WGS84.Inverse(lat1, lng1, lat2, lng2)['azi1']
+                temp_heading_angle = temp_wave_direction - temp_ship_angle
+                temp_resistance_calm_water = ship.resistance_calm_water(temp_speed, data_kapal)
+                temp_resistance_added_wave = RAW.Calculation(
+                    data_kapal, temp_height,
+                    temp_wave_period, temp_heading_angle,
+                    temp_speed)
+                temp_resistance_total = temp_resistance_calm_water + temp_resistance_added_wave
+                temp_power = ship.power(
+                    temp_speed,
+                    temp_resistance_total,
+                    data_kapal)
+                temp_foc = foc(temp_time,
+                               temp_power,
+                               sfoc)
+                if temp_power <= BHP:
+                    list_wave_height.append(temp_height)
+                    list_wave_direction.append(temp_wave_direction)
+                    list_wave_period.append(extract_wave_data[2])
+                    list_speed.append(temp_speed)
+                    list_time.append(temp_time)
+                    list_ship_angle.append(temp_ship_angle)
+                    list_heading_angle.append(temp_heading_angle)
+                    list_resistance_calm_water.append(temp_resistance_calm_water)
+                    list_resistance_added_wave.append(temp_resistance_added_wave)
+                    list_resistance_total.append(temp_resistance_total)
+                    list_power.append(temp_power)
+                    list_foc.append(temp_foc)
+                    time = time + round(list_time[len(list_time) - 1])
+                elif temp_power >= BHP:
+                    temp_speed = temp_speed - 1
+                    temp_time = sail_time(dist, temp_speed)
+                    temp_ship_angle = Geodesic.WGS84.Inverse(lat1, lng1, lat2, lng2)['azi1']
+                    temp_heading_angle = temp_wave_direction - temp_ship_angle
+                    temp_resistance_calm_water = ship.resistance_calm_water(temp_speed, data_kapal)
+                    temp_resistance_added_wave = RAW.Calculation(
+                        data_kapal, temp_height,
+                        temp_wave_period, temp_heading_angle,
+                        temp_speed)
+                    temp_resistance_total = temp_resistance_calm_water + temp_resistance_added_wave
+                    temp_power = ship.power(
+                        temp_speed,
+                        temp_resistance_total,
+                        data_kapal)
+                    temp_foc = foc(temp_time,
+                                   temp_power,
+                                   sfoc)
+                    if temp_power <= BHP:
+                        list_wave_height.append(temp_height)
+                        list_wave_direction.append(temp_wave_direction)
+                        list_wave_period.append(extract_wave_data[2])
+                        list_speed.append(temp_speed)
+                        list_time.append(temp_time)
+                        list_ship_angle.append(temp_ship_angle)
+                        list_heading_angle.append(temp_heading_angle)
+                        list_resistance_calm_water.append(temp_resistance_calm_water)
+                        list_resistance_added_wave.append(temp_resistance_added_wave)
+                        list_resistance_total.append(temp_resistance_total)
+                        list_power.append(temp_power)
+                        list_foc.append(temp_foc)
+                        time = time + round(list_time[len(list_time) - 1])
+                    elif temp_power >= BHP:
+                        temp_speed = temp_speed - 1
+                        temp_time = sail_time(dist, temp_speed)
+                        temp_ship_angle = Geodesic.WGS84.Inverse(lat1, lng1, lat2, lng2)['azi1']
+                        temp_heading_angle = temp_wave_direction - temp_ship_angle
+                        temp_resistance_calm_water = ship.resistance_calm_water(temp_speed, data_kapal)
+                        temp_resistance_added_wave = RAW.Calculation(
+                            data_kapal, temp_height,
+                            temp_wave_period, temp_heading_angle,
+                            temp_speed)
+                        temp_resistance_total = temp_resistance_calm_water + temp_resistance_added_wave
+                        temp_power = ship.power(
+                            temp_speed,
+                            temp_resistance_total,
+                            data_kapal)
+                        temp_foc = foc(temp_time,
+                                       temp_power,
+                                       sfoc)
+                        list_wave_height.append(temp_height)
+                        list_wave_direction.append(temp_wave_direction)
+                        list_wave_period.append(extract_wave_data[2])
+                        list_speed.append(temp_speed)
+                        list_time.append(temp_time)
+                        list_ship_angle.append(temp_ship_angle)
+                        list_heading_angle.append(temp_heading_angle)
+                        list_resistance_calm_water.append(temp_resistance_calm_water)
+                        list_resistance_added_wave.append(temp_resistance_added_wave)
+                        list_resistance_total.append(temp_resistance_total)
+                        list_power.append(temp_power)
+                        list_foc.append(temp_foc)
+                        time = time + round(list_time[len(list_time) - 1])
+
+        #list_wave_height.append(extract_wave_data[0])
+        #list_wave_direction.append(extract_wave_data[1])
+        #list_wave_period.append(extract_wave_data[2])
+        #list_speed.append(real_speed(list_wave_height[len(list_wave_height)-1],
+                                        #initial_speed,
+                                        #Lpp
+                                       #)
+                         #)
+        #list_time.append(sail_time(
+            #dist,list_speed[len(list_speed)-1]
+                                   #))
+        #time = time + round(list_time[len(list_time)-1])
+        #list_ship_angle.append(Geodesic.WGS84.Inverse(
+            #lat1, lng1, lat2, lng2)['azi1'])
+        #list_heading_angle.append((list_wave_direction[len(list_wave_direction)-1]) - (
+            #list_ship_angle[len(list_ship_angle)-1]))
+        #list_resistance_calm_water.append(ship.resistance_calm_water(
+            #list_speed[len(list_speed)-1], data_kapal
+        #))
+        #list_resistance_added_wave.append(RAW.Calculation(
+            #data_kapal, list_wave_height[len(list_wave_height)-1],
+            #list_wave_period[len(list_wave_period)-1],
+            #list_heading_angle[len(list_heading_angle)-1],
+            #list_speed[len(list_speed)-1]
+        #))
+        #list_resistance_total.append(
+            #list_resistance_calm_water[len(list_resistance_calm_water)-1] + list_resistance_added_wave[
+                #len(list_resistance_added_wave)-1]
+        #)
+        #list_power.append(ship.power(
+            #list_speed[len(list_speed)-1],
+            #list_resistance_total[len(list_resistance_total)-1],
+            #data_kapal
+        #))
+        #list_foc.append(foc(
+            #list_time[len(list_time)-1],
+            #list_power[len(list_power)-1],
+            #sfoc
+        #))
     return (list_wave_height, list_speed, list_time,
             list_wave_direction, list_wave_period,
             list_ship_angle, list_heading_angle,
