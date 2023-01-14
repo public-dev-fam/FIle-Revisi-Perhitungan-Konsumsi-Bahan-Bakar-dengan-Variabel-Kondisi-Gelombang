@@ -341,7 +341,6 @@ def new_l(data):
     return new_list_l
 
 def F_M(nama_excel, wave_height, wave_period, heading_angle, vs):
-    xls = pd.ExcelFile(nama_excel)
     data = ship_new_particular(nama_excel)
     loa = data[1]
     wave_amplitude = wave_data(wave_height, wave_period)[0]

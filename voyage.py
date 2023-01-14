@@ -22,60 +22,88 @@ def wave_data(lng, lat, time, coordinate, data_set_gelombang):
     wave_period = data[string3][time]
     return wave_height, wave_direction, wave_period
 
-def wave_list(data_coordinate_excel, ###dataframe untuk tabel
-              data_set_gelombang, ##data hasil mendapatkan perhitungan gelombang
-              data_kapal, ##data kapal
-              start_time): ##waktu mulai
+def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk tabel
+                                    data_set_gelombang,  ##data hasil mendapatkan perhitungan gelombang
+                                    data_kapal,  ##data kapal
+                                    start_time): ##waktu mulai
     route = Coordinate.distance_route(data_coordinate_excel)
-    data2 = ship.particular(data_kapal)[1]['Value']
-    initial_speed = data2[9]
-    Lpp = data2[5]
+    ship_particular = ship.particular(data_kapal)[0]['Value']
+    initial_speed = ship_particular[0]
+    Lpp = ship_particular[3]
+    sfoc = ship_particular[15]
+    BHP = ship_particular[13]
     time = start_time
-    list_height = []
-    list_period = []
-    list_direction = []
-    speed_list = []
-    time_list = []
-    for coor, lat, lng, dist in zip(route['coordinate'],
+    list_wave_height = []
+    list_wave_period = []
+    list_wave_direction = []
+    list_speed = []
+    list_time = []
+    list_ship_angle = []
+    list_heading_angle = []
+    list_resistance_calm_water = []
+    list_resistance_added_wave = []
+    list_resistance_total = []
+    list_power = []
+    list_foc = []
+    for coor, lat1, lng1, lat2, lng2, dist in zip(
+                                    route['coordinate'],
                                     route['Lat1'], 
-                                    route['Lng1'], 
+                                    route['Lng1'],
+                                    route['Lat2'],
+                                    route['Lng2'],
                                     route['Distance (nm)'] 
                                     ):
-        
-        list_height.append(wave_data(str(lat), 
-                                     str(lng), 
-                                     time,
-                                     coor,
-                                     data_set_gelombang
-                                    )[0]
-                          )
-        list_direction.append(wave_data(str(lat), 
-                                     str(lng), 
-                                     time,
-                                     coor,
-                                     data_set_gelombang
-                                    )[1]
-                          )
-        list_period.append(wave_data(str(lat), 
-                                     str(lng), 
-                                     time,
-                                     coor,
-                                     data_set_gelombang
-                                    )[2]
-                          )
-        
-        speed_list.append(real_speed(list_height[len(list_height)-1],
+        extract_wave_data = wave_data(str(lat1), str(lng1), time, coor, data_set_gelombang)
+        temp_height = extract_wave_data[0]
+        temp_wave_direction = extract_wave_data[1]
+        temp_wave_period = extract_wave_data[2]
+        temp_speed = real_speed(list_wave_height[len(list_wave_height)-1],
+                                        initial_speed, Lpp
+        temp_time =
+        list_wave_height.append(extract_wave_data[0])
+        list_wave_direction.append(extract_wave_data[1])
+        list_wave_period.append(extract_wave_data[2])
+        list_speed.append(real_speed(list_wave_height[len(list_wave_height)-1],
                                         initial_speed, 
                                         Lpp
                                        )
                          )
-        
-        time_list.append(sail_time(dist,
-                                   speed_list[len(speed_list)-1]))
-        
-        time = time + round(time_list[len(time_list)-1])
-        
-    return list_height, speed_list, time_list, list_direction, list_period
+        list_time.append(sail_time(
+            dist,list_speed[len(list_speed)-1]
+                                   ))
+        time = time + round(list_time[len(list_time)-1])
+        list_ship_angle.append(Geodesic.WGS84.Inverse(
+            lat1, lng1, lat2, lng2)['azi1'])
+        list_heading_angle.append((list_wave_direction[len(list_wave_direction)-1]) - (
+            list_ship_angle[len(list_ship_angle)-1]))
+        list_resistance_calm_water.append(ship.resistance_calm_water(
+            list_speed[len(list_speed)-1], data_kapal
+        ))
+        list_resistance_added_wave.append(RAW.Calculation(
+            data_kapal, list_wave_height[len(list_wave_height)-1],
+            list_wave_period[len(list_wave_period)-1],
+            list_heading_angle[len(list_heading_angle)-1],
+            list_speed[len(list_speed)-1]
+        ))
+        list_resistance_total.append(
+            list_resistance_calm_water[len(list_resistance_calm_water)-1] + list_resistance_added_wave[
+                len(list_resistance_added_wave)-1]
+        )
+        list_power.append(ship.power(
+            list_speed[len(list_speed)-1],
+            list_resistance_total[len(list_resistance_total)-1],
+            data_kapal
+        ))
+        list_foc.append(foc(
+            list_time[len(list_time)-1],
+            list_power[len(list_power)-1],
+            sfoc
+        ))
+    return (list_wave_height, list_speed, list_time,
+            list_wave_direction, list_wave_period,
+            list_ship_angle, list_heading_angle,
+            list_resistance_calm_water, list_resistance_added_wave,
+            list_resistance_total, list_power, list_foc)
 
 def round_one(number):
     value = float("{0:.1f}".format(number))
@@ -123,40 +151,29 @@ def calc_koreksi_distance(data1, data2):
     return ts
 
 def Calculate(data_kapal, jalur_pelayaran, data_set_gelombang, start_time):
-    data1 = Coordinate.distance_route(jalur_pelayaran)
-    new_route = data1.copy()
-    data2 = ship.particular(data_kapal)[1]['Value']
-    sfoc = data2[14]
-    initial_speed = data2[9]
-    Lpp = data2[5]
-    data_gelombang = wave_list(data_coordinate_excel = jalur_pelayaran,
-                               data_set_gelombang = data_set_gelombang,
-                               data_kapal = data_kapal,
-                               start_time = start_time)
-    new_route['wave height (m)'] = pd.DataFrame(data_gelombang[0])
-    new_route['wave direction'] = pd.DataFrame(data_gelombang[3])
-    new_route['wave period'] = pd.DataFrame(data_gelombang[4])
-    new_route['ship angle'] = new_route.apply(lambda row:
-        Geodesic.WGS84.Inverse(row['Lat1'], row['Lng1'], row['Lat2'], row['Lng2'])['azi1'], axis=1)
-    new_route['heading angle'] = new_route.apply(lambda row:
-        (row['wave direction'] - row['ship angle']), axis=1)
-    new_route['speed (knot)'] = new_route.apply(lambda row:
-        real_speed(row['wave height (m)'], initial_speed, Lpp), axis=1)
-    new_route['time (hour)'] = new_route.apply(lambda row:
-        sail_time(row['Distance (nm)'], row['speed (knot)']), axis=1)
-    new_route['R Calm Water (kN)'] = new_route.apply(lambda row:
-        ship.resistance_calm_water(row['speed (knot)'], data_kapal), axis=1)
-    new_route['R Added Wave (kN)'] = new_route.apply(lambda row:
-        RAW.Calculation(data_kapal, row['wave height (m)'], row['wave period'],
-                       row['heading angle'], row['speed (knot)'] ), axis=1)
-    new_route['R Total (kN)'] = new_route.apply(lambda row:
-        (row['R Calm Water (kN)'] + row['R Added Wave (kN)']), axis=1)    
-    new_route['Power (kwh)'] = new_route.apply(lambda row:
-        ship.power(row['speed (knot)'], row['R Calm Water (kN)'], row['R Added Wave (kN)'],
-                       data_kapal), axis=1)
-    new_route['foc (ton)'] = new_route.apply(lambda row:
-        foc(row['time (hour)'], row['Power (kwh)'], sfoc), axis=1)
-    return new_route
+    lat_lng_data = Coordinate.distance_route(jalur_pelayaran)
+    calculation = lat_lng_data.copy()
+    load_data = data_processing_from_coordinate(data_coordinate_excel = jalur_pelayaran,
+                                                data_set_gelombang = data_set_gelombang,
+                                                data_kapal = data_kapal,
+                                                start_time = start_time)
+    #Load_data result(list_wave_height#0, speed_list#1, time_list#2, list_wave_direction#3,
+    # list_wave_period#4, list_ship_angle#5, list_heading_angle#6)
+    #list_resistance_calm_water#7, list_resistance_added_wave#8,
+    # list_resistance_total#9, list_power#10, list_foc#11)
+    calculation['wave height (m)'] = pd.DataFrame(load_data[0])
+    calculation['wave direction'] = pd.DataFrame(load_data[3])
+    calculation['wave period'] = pd.DataFrame(load_data[4])
+    calculation['ship angle'] = pd.DataFrame(load_data[5])
+    calculation['heading angle'] = pd.DataFrame(load_data[6])
+    calculation['speed (knot)'] = pd.DataFrame(load_data[1])
+    calculation['time (hour)'] = pd.DataFrame(load_data[2])
+    calculation['R Calm Water (kN)'] = pd.DataFrame(load_data[7])
+    calculation['R Added Wave (kN)'] = pd.DataFrame(load_data[8])
+    calculation['R Total (kN)'] = pd.DataFrame(load_data[9])
+    calculation['Power (kwh)'] = pd.DataFrame(load_data[10])
+    calculation['foc (ton)'] = pd.DataFrame(load_data[11])
+    return calculation
 
 def foc_in_calm_water(jalur_pelayaran, data_kapal):
     data1 = Coordinate.distance_route(jalur_pelayaran)
@@ -165,15 +182,16 @@ def foc_in_calm_water(jalur_pelayaran, data_kapal):
     data2 = ship.particular(data_kapal)[1]['Value']
     initial_speed = data2[9]
     Lpp = data2[5]
-    new_route['speed (knot)'] = new_route.apply(lambda row : 
+    new_route['speed (knot)'] = new_route.apply(lambda row :
         initial_speed, axis=1)
     new_route['time (hour)'] = new_route.apply(lambda row: 
         sail_time(row['Distance (nm)'], row['speed (knot)']), axis=1)
     new_route['R Calm Water (kN)'] = new_route.apply(lambda row: 
         ship.resistance_calm_water(row['speed (knot)'], data_kapal), axis=1)
     new_route['Power (kwh)'] = new_route.apply(lambda row: 
-        ship.power(row['speed (knot)'], row['R Calm Water (kN)'], 0,
-                       data_kapal), axis=1)
+        ship.power(row['speed (knot)'],
+                   row['R Calm Water (kN)'],
+                   data_kapal), axis=1)
     new_route['foc (ton)'] = new_route.apply(lambda row: 
         foc(row['time (hour)'], row['Power (kwh)'], sfoc), axis=1)
     return new_route

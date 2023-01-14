@@ -34,22 +34,22 @@ def particular(nama_excel):
     sfoc = df['Value'][14]
     ll = Vs-8 #upperlimit
     ul = Vs+8 #lowelimit
-    dic = {'Vs': Vs, 
-           'Loa': Loa, 
-           'Lwl': Lwl, 
-           'Lpp': Lpp,
-           'B': B,
-           'H': H,
-           'T': T,
-           'Cb': Cb,
-           'Lcb': Lcb,
-           'Lcg': Lcg,
-           'WSA': WSA,
-           'Displacement': Disp,
-           'ship type': ship_type,
-           'BHP': BHP,
-           'engine speed': engine_speed,
-           'sfoc': sfoc
+    dic = {'Vs': Vs, #0
+           'Loa': Loa, #1
+           'Lwl': Lwl, #2
+           'Lpp': Lpp, #3
+           'B': B, #4
+           'H': H, #5
+           'T': T, #6
+           'Cb': Cb, #7
+           'Lcb': Lcb, #8
+           'Lcg': Lcg, #9
+           'WSA': WSA, #10
+           'Displacement': Disp, #11
+           'ship type': ship_type, #12
+           'BHP': BHP, #13
+           'engine speed': engine_speed, #14
+           'sfoc': sfoc #15
           }
     df1 = pd.DataFrame.from_dict(dic, orient='index')
     df1.columns = ['Value']
@@ -190,7 +190,7 @@ def resistance_calm_water(Vs, nama_excel):
     R = Rtotal/1000 #in Kilo Newton
     return R
 
-def power(Vs, Rcw, Raw, nama_excel):
+def power(Vs, Rtotal, nama_excel):
     data = particular(nama_excel)[0]['Value']
     Lpp = data[3]
     B = data[4]
@@ -203,7 +203,7 @@ def power(Vs, Rcw, Raw, nama_excel):
     sfoc = data[15]    
     coef_acc = 'normal section shape'
     rudder_type = ""
-    Rtotal = (Rcw + Raw)*1000
+    Rtotal = Rtotal*1000
     knot = 0.514
     gravity = 9.81             #m/s**2
     u = 0.0000009425013408     #m2/s
