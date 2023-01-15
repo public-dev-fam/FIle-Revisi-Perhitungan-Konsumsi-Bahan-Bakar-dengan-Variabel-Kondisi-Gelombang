@@ -30,27 +30,33 @@ def particular(nama_excel):
     Disp = 4902.545 #belum dibuat tabelnya
     ship_type = df['Value'][1]
     BHP = df['Value'][13]
-    engine_speed = df['Value'][15]
-    sfoc = df['Value'][14]
+    engine_speed = df['Value'][18]
+    sfoc_100 = df['Value'][14]
+    sfoc_85 = df['Value'][15]
+    sfoc_75 = df['Value'][16]
+    sfoc_50 = df['Value'][17]
     ll = Vs-8 #upperlimit
     ul = Vs+8 #lowelimit
-    dic = {'Vs': Vs, #0
-           'Loa': Loa, #1
-           'Lwl': Lwl, #2
-           'Lpp': Lpp, #3
-           'B': B, #4
-           'H': H, #5
-           'T': T, #6
-           'Cb': Cb, #7
-           'Lcb': Lcb, #8
-           'Lcg': Lcg, #9
-           'WSA': WSA, #10
-           'Displacement': Disp, #11
-           'ship type': ship_type, #12
-           'BHP': BHP, #13
-           'engine speed': engine_speed, #14
-           'sfoc': sfoc #15
-          }
+    dic = {'Vs': Vs,  #0
+           'Loa': Loa,  #1
+           'Lwl': Lwl,  #2
+           'Lpp': Lpp,  #3
+           'B': B,  #4
+           'H': H,  #5
+           'T': T,  #6
+           'Cb': Cb,  #7
+           'Lcb': Lcb,  #8
+           'Lcg': Lcg,  #9
+           'WSA': WSA,  #10
+           'Displacement': Disp,  #11
+           'ship type': ship_type,  #12
+           'BHP': BHP,  #13
+           'engine speed': engine_speed,#14
+           'sfoc at 100%': sfoc_100,#15
+           'sfoc at 85%': sfoc_85,#16
+           'sfoc at 75%': sfoc_75,#17
+           'sfoc at 50%': sfoc_50,#18
+           }
     df1 = pd.DataFrame.from_dict(dic, orient='index')
     df1.columns = ['Value']
     return df1, df 
@@ -60,13 +66,8 @@ def resistance_calm_water(Vs, nama_excel):
     data = particular(nama_excel)[0]['Value']
     Lpp = data[3]
     B = data[4]
-    H = data[5]
     T = data[6]
-    Lwl = data[2]
     ship_type = data[12]
-    BHP = data[13]
-    engine_speed = data[14]
-    sfoc = data[15]    
     coef_acc = 'normal section shape'
     rudder_type = ""
     p_sea_water = 1.025        #ton/m3
@@ -78,12 +79,10 @@ def resistance_calm_water(Vs, nama_excel):
     Fn = Vs_in_ms/math.sqrt(Lwl*gravity)                         #Froude Number
     Cb = 4.22*(-1) + 27.8*math.sqrt(Fn) - 39.1*Fn + 46.6*(Fn**3) #Block Coefficient 
     Cm = 0.977 + 0.085*(Cb - 0.6)                                #midship section coefficient
-    Am = Cm*B*T                                                  #area of midship
     Cp = Cb/Cm                                                   #prismatic coefficient
     Cwp = 0.18 + 0.86*Cp                                         #waterplane coefficient
     LCB = -13.5 + 19.4*Cp                                        #Longitudinal Center of Bouyancy
     V = Lwl*B*T*Cb                                               #volume displacement
-    A = V*p_sea_water                                            #displacement
     Ta = T
     Tf = T
     #Viscous Resistance
@@ -192,15 +191,11 @@ def resistance_calm_water(Vs, nama_excel):
 
 def power(Vs, Rtotal, nama_excel):
     data = particular(nama_excel)[0]['Value']
-    Lpp = data[3]
     B = data[4]
-    H = data[5]
     T = data[6]
     Lwl = data[2]
     ship_type = data[12]
-    BHP = data[13]
     engine_speed = data[14]
-    sfoc = data[15]    
     coef_acc = 'normal section shape'
     rudder_type = ""
     Rtotal = Rtotal*1000

@@ -30,7 +30,6 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
     ship_particular = ship.particular(data_kapal)[0]['Value']
     initial_speed = ship_particular[0]
     Lpp = ship_particular[3]
-    sfoc = ship_particular[15]
     BHP = ship_particular[13]
     time = start_time
     list_wave_height = []
@@ -44,6 +43,7 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
     list_resistance_added_wave = []
     list_resistance_total = []
     list_power = []
+    list_sfoc = []
     list_foc = []
     for coor, lat1, lng1, lat2, lng2, dist in zip(
                                     route['coordinate'],
@@ -71,9 +71,10 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
             temp_speed,
             temp_resistance_total,
             data_kapal)
+        temp_sfoc = sfoc_calc(data_kapal, temp_power)
         temp_foc = foc(temp_time,
                        temp_power,
-                       sfoc)
+                       temp_sfoc)
         if temp_power <= BHP:
             list_wave_height.append(temp_height)
             list_wave_direction.append(temp_wave_direction)
@@ -86,6 +87,7 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
             list_resistance_added_wave.append(temp_resistance_added_wave)
             list_resistance_total.append(temp_resistance_total)
             list_power.append(temp_power)
+            list_sfoc.append(temp_sfoc)
             list_foc.append(temp_foc)
             time = time + round(list_time[len(list_time) - 1])
         elif temp_power >= BHP:
@@ -103,9 +105,10 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                 temp_speed,
                 temp_resistance_total,
                 data_kapal)
+            temp_sfoc = sfoc_calc(data_kapal, temp_power)
             temp_foc = foc(temp_time,
                            temp_power,
-                           sfoc)
+                           temp_sfoc)
             if temp_power <= BHP:
                 list_wave_height.append(temp_height)
                 list_wave_direction.append(temp_wave_direction)
@@ -118,6 +121,7 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                 list_resistance_added_wave.append(temp_resistance_added_wave)
                 list_resistance_total.append(temp_resistance_total)
                 list_power.append(temp_power)
+                list_sfoc.append(temp_sfoc)
                 list_foc.append(temp_foc)
                 time = time + round(list_time[len(list_time) - 1])
             elif temp_power >= BHP:
@@ -135,9 +139,10 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                     temp_speed,
                     temp_resistance_total,
                     data_kapal)
+                temp_sfoc = sfoc_calc(data_kapal, temp_power)
                 temp_foc = foc(temp_time,
                                temp_power,
-                               sfoc)
+                               temp_sfoc)
                 if temp_power <= BHP:
                     list_wave_height.append(temp_height)
                     list_wave_direction.append(temp_wave_direction)
@@ -150,6 +155,7 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                     list_resistance_added_wave.append(temp_resistance_added_wave)
                     list_resistance_total.append(temp_resistance_total)
                     list_power.append(temp_power)
+                    list_sfoc.append(temp_sfoc)
                     list_foc.append(temp_foc)
                     time = time + round(list_time[len(list_time) - 1])
                 elif temp_power >= BHP:
@@ -167,9 +173,11 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                         temp_speed,
                         temp_resistance_total,
                         data_kapal)
+                    temp_sfoc = sfoc_calc(data_kapal, temp_power)
                     temp_foc = foc(temp_time,
                                    temp_power,
-                                   sfoc)
+                                   temp_sfoc)
+
                     if temp_power <= BHP:
                         list_wave_height.append(temp_height)
                         list_wave_direction.append(temp_wave_direction)
@@ -182,6 +190,7 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                         list_resistance_added_wave.append(temp_resistance_added_wave)
                         list_resistance_total.append(temp_resistance_total)
                         list_power.append(temp_power)
+                        list_sfoc.append(temp_sfoc)
                         list_foc.append(temp_foc)
                         time = time + round(list_time[len(list_time) - 1])
                     elif temp_power >= BHP:
@@ -199,9 +208,10 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                             temp_speed,
                             temp_resistance_total,
                             data_kapal)
+                        temp_sfoc = sfoc_calc(data_kapal, temp_power)
                         temp_foc = foc(temp_time,
                                        temp_power,
-                                       sfoc)
+                                       temp_sfoc)
                         list_wave_height.append(temp_height)
                         list_wave_direction.append(temp_wave_direction)
                         list_wave_period.append(extract_wave_data[2])
@@ -213,57 +223,14 @@ def data_processing_from_coordinate(data_coordinate_excel,  ###dataframe untuk t
                         list_resistance_added_wave.append(temp_resistance_added_wave)
                         list_resistance_total.append(temp_resistance_total)
                         list_power.append(temp_power)
+                        list_sfoc.append(temp_sfoc)
                         list_foc.append(temp_foc)
                         time = time + round(list_time[len(list_time) - 1])
-
-        #list_wave_height.append(extract_wave_data[0])
-        #list_wave_direction.append(extract_wave_data[1])
-        #list_wave_period.append(extract_wave_data[2])
-        #list_speed.append(real_speed(list_wave_height[len(list_wave_height)-1],
-                                        #initial_speed,
-                                        #Lpp
-                                       #)
-                         #)
-        #list_time.append(sail_time(
-            #dist,list_speed[len(list_speed)-1]
-                                   #))
-        #time = time + round(list_time[len(list_time)-1])
-        #list_ship_angle.append(Geodesic.WGS84.Inverse(
-            #lat1, lng1, lat2, lng2)['azi1'])
-        #list_heading_angle.append((list_wave_direction[len(list_wave_direction)-1]) - (
-            #list_ship_angle[len(list_ship_angle)-1]))
-        #list_resistance_calm_water.append(ship.resistance_calm_water(
-            #list_speed[len(list_speed)-1], data_kapal
-        #))
-        #list_resistance_added_wave.append(RAW.Calculation(
-            #data_kapal, list_wave_height[len(list_wave_height)-1],
-            #list_wave_period[len(list_wave_period)-1],
-            #list_heading_angle[len(list_heading_angle)-1],
-            #list_speed[len(list_speed)-1]
-        #))
-        #list_resistance_total.append(
-            #list_resistance_calm_water[len(list_resistance_calm_water)-1] + list_resistance_added_wave[
-                #len(list_resistance_added_wave)-1]
-        #)
-        #list_power.append(ship.power(
-            #list_speed[len(list_speed)-1],
-            #list_resistance_total[len(list_resistance_total)-1],
-            #data_kapal
-        #))
-        #list_foc.append(foc(
-            #list_time[len(list_time)-1],
-            #list_power[len(list_power)-1],
-            #sfoc
-        #))
     return (list_wave_height, list_speed, list_time,
             list_wave_direction, list_wave_period,
             list_ship_angle, list_heading_angle,
             list_resistance_calm_water, list_resistance_added_wave,
-            list_resistance_total, list_power, list_foc)
-
-def round_one(number):
-    value = float("{0:.1f}".format(number))
-    return value
+            list_resistance_total, list_power, list_sfoc, list_foc)
 
 def real_speed(wave_height, speed, Lpp):
     data = Vs_decision.support_decision(Lpp, speed)[1]
@@ -290,21 +257,18 @@ def foc(time, BHP, sfoc):
     fuel_ton = fuel/(10**6)
     return fuel_ton
 
-def calc_time_selisih(data1, data2):
-    ts = [] ##time-selisih
-    ts.append(data1[0])
-    for x,y in zip(data1[1:], data2):
-        ts.append(x-y)
-    ts[len(ts)-1] = ts[len(ts)-1] - data2[len(data2)-1]
-    return ts
-
-def calc_koreksi_distance(data1, data2):
-    ts = [] ##time-selisih
-    ts.append(data1[0])
-    for x,y in zip(data1[1:], data2):
-        ts.append(x+y)
-    ts[len(ts)-1] = ts[len(ts)-1] + data2[len(data2)-1]
-    return ts
+def sfoc_calc(nama_excel, power_used):
+    data = ship.particular(nama_excel)[0]['Value']
+    max_power = data[13]
+    if power_used <= max_power*0.625:
+        sfoc = data[18]
+    if power_used > max_power * 0.625 and power_used <= max_power * 0.8:
+        sfoc = data[17]
+    if power_used > max_power * 0.8 and power_used <= max_power * 0.925:
+        sfoc = data[16]
+    if power_used > max_power * 0.925:
+        sfoc = data[15]
+    return sfoc
 
 def Calculate(data_kapal, jalur_pelayaran, data_set_gelombang, start_time):
     lat_lng_data = Coordinate.distance_route(jalur_pelayaran)
@@ -328,7 +292,8 @@ def Calculate(data_kapal, jalur_pelayaran, data_set_gelombang, start_time):
     calculation['R Added Wave (kN)'] = pd.DataFrame(load_data[8])
     calculation['R Total (kN)'] = pd.DataFrame(load_data[9])
     calculation['Power (kwh)'] = pd.DataFrame(load_data[10])
-    calculation['foc (ton)'] = pd.DataFrame(load_data[11])
+    calculation['sfoc (g/kwh)'] = pd.DataFrame(load_data[11])
+    calculation['foc (ton)'] = pd.DataFrame(load_data[12])
     return calculation
 
 def foc_in_calm_water(jalur_pelayaran, data_kapal):
@@ -344,10 +309,15 @@ def foc_in_calm_water(jalur_pelayaran, data_kapal):
         sail_time(row['Distance (nm)'], row['speed (knot)']), axis=1)
     new_route['R Calm Water (kN)'] = new_route.apply(lambda row: 
         ship.resistance_calm_water(row['speed (knot)'], data_kapal), axis=1)
-    new_route['Power (kwh)'] = new_route.apply(lambda row: 
+    new_route['Power (kwh)'] = new_route.apply(lambda row:
         ship.power(row['speed (knot)'],
                    row['R Calm Water (kN)'],
                    data_kapal), axis=1)
+    new_route['sfoc (g/kwh)'] = new_route.apply(lambda row:
+                                               sfoc_calc(
+                                                   data_kapal,
+                                                   row['Power (kwh)']
+                                               ), axis=1)
     new_route['foc (ton)'] = new_route.apply(lambda row: 
-        foc(row['time (hour)'], row['Power (kwh)'], sfoc), axis=1)
+        foc(row['time (hour)'], row['Power (kwh)'], row['sfoc (g/kwh)']), axis=1)
     return new_route
