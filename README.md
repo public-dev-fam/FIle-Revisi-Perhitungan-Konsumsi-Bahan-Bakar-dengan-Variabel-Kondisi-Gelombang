@@ -1,4 +1,4 @@
-##read this file
+##read this
 ###Use this file to run the program/n
 #1. import file python to run the program
 #ship, RAW, Coordinate, WaveData, Vs_decision, voyage,
